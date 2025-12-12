@@ -13,35 +13,34 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score
 from joblib import Parallel, delayed
 
+# server imports
+import requests
+from pathlib import Path
+
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
-# ==========================
-# SETTINGS
-# ==========================
-DATA_PATH   = "SCORE_LEVEL/client2/BTC30Min.csv"
-RESULTS_DIR = "SCORE_LEVEL/global/results"
+# settings
+DATA_PATH   = "SCORE_LEVEL/2/BTC30Min.csv"
+# RESULTS_DIR = "SCORE_LEVEL/global/results"
 ANOMALY_RATE = 0.05
 CHUNKS       = 6  # also used as ensemble size (one model per chunk)
 
-# ==========================
-# UTILS
-# ==========================
+# utils
 def choose_n_jobs(preferred=-1, cpu_safety_frac=0.5, mem_threshold_pct=80):
     cpu_count = os.cpu_count() or 1
     cpu_load  = psutil.cpu_percent(interval=0.5)
     mem_pct   = psutil.virtual_memory().percent
 
     if preferred == -1:
-        # auto mode
         if cpu_load > 70 or mem_pct > mem_threshold_pct:
             n_jobs = max(1, int(cpu_count * cpu_safety_frac))
         else:
-            n_jobs = -1  # all cores
+            n_jobs = -1  # use all cores
     else:
         n_jobs = min(preferred, cpu_count)
         if cpu_load > 85 or mem_pct > mem_threshold_pct:
             n_jobs = max(1, int(cpu_count * cpu_safety_frac))
-
     return n_jobs
 
 def load_data(file_path):
@@ -50,19 +49,25 @@ def load_data(file_path):
     print(f"[INFO] Dataset loaded with shape {df.shape}")
     return df
 
+# anomaly injection
 def inject_extreme_anomalies(df, rate=0.02, random_state=None):
     df = df.copy()
     if random_state is None:
         random_state = np.random.randint(0, 10000)
     np.random.seed(random_state)
 
-    # numeric columns only (exclude datetime if ever numeric)
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
     numeric_cols = [c for c in numeric_cols if c != 'datetime']
 
     n_anomalies = int(len(df) * rate)
     anomaly_idx = np.random.choice(df.index, n_anomalies, replace=False)
 
+    '''
+    Three distinct anomaly types will be generated:
+    1. Adaptive Feature Perturbation
+    2. Correlated OHLC Distortion
+    3. Volume Spike Amplification
+    '''
     # 1) base adaptive perturbation per numeric feature
     for col in numeric_cols:
         std = df[col].std()
@@ -89,6 +94,10 @@ def inject_extreme_anomalies(df, rate=0.02, random_state=None):
     print(f"[INFO] Injected {n_anomalies} anomalies in numeric cols: {numeric_cols}")
     return df
 
+'''
+actually feature selection jud ni sya ayaw lang i mind ang extract since lain na sya na
+type but similar logic ra with select.
+'''
 def extract_features(df):
     df = df.copy()
     numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
@@ -97,6 +106,7 @@ def extract_features(df):
     print(f"[INFO] Using {len(numeric_cols)} numeric columns: {numeric_cols}")
     return df
 
+# data partitioning section: 60/20/20
 def split_data(df, test_size=0.2, val_size=0.25, random_state=None):
     if random_state is None:
         random_state = np.random.randint(0, 10000)
@@ -148,9 +158,7 @@ def preprocess(train, val, test):
 
     return X_train, X_val, X_test, y_train, y_val, y_test, scaler
 
-# ==========================
-# DUAL-LEVEL PARALLEL
-# ==========================
+# dual parallel section
 def train_single_chunk(subX, base_params, seed):
     params = base_params.copy()
     base_n_estimators = int(params.get("n_estimators", 100))
@@ -158,7 +166,7 @@ def train_single_chunk(subX, base_params, seed):
     # Each chunk gets a subset of trees -> memory friendly
     params["n_estimators"] = base_n_estimators  # instead of // CHUNKS
     params["max_samples"]  = base_params.get("max_samples", 0.1)  # ayaw i-cap sa 0.05
-    # params["bootstrap"]    = True  # match sa old best_params
+    # params["bootstrap"]    = True  # match sa old best_params [pls ignore]
 
     params["n_jobs"]       = choose_n_jobs(-1)  # memory-aware tree-level parallel
     params["random_state"] = seed
@@ -229,9 +237,7 @@ def save_results(output_path, results_dict):
     with open(output_path, "w") as f:
         json.dump(results_dict, f, indent=4)
 
-# ==========================
-# MAIN CLIENT SCRIPT
-# ==========================
+# main script
 def run_client(random_state=None):
     if random_state is None:
         random_state = np.random.randint(0, 10000)
@@ -248,7 +254,7 @@ def run_client(random_state=None):
     df = inject_extreme_anomalies(df, rate=ANOMALY_RATE, random_state=random_state)
     print(f"[TIME] Inject anomalies: {time.time() - t0:.4f} sec")
 
-    # --- FEATURE EXTRACTION ---
+    # --- FEATURE SELECTION ---
     t0 = time.time()
     df = extract_features(df)
     print(f"[TIME] Extract features: {time.time() - t0:.4f} sec")
@@ -310,8 +316,29 @@ def run_client(random_state=None):
         "exec_time_total": exec_time_total
     }
 
-    save_results(os.path.join(RESULTS_DIR, "client2_results.json"), results)
-    print(f"[INFO] Results saved in {RESULTS_DIR}")
+    # ---- AUTO SEND TO SERVER ----
+    SERVER_URL = "http://192.168.254.158"   # <-- CHANGE to server PC IP
+    ROUND_ID   = "1"
+    CLIENT_ID  = "client2"
+
+    payload = json.dumps(results).encode("utf-8")
+
+    files = {
+        "payload": ("client2_results.json", payload, "application/json")
+    }
+    data = {
+        "round_id": ROUND_ID,
+        "client_id": CLIENT_ID
+    }
+
+    resp = requests.post(
+        f"{SERVER_URL}/upload_scores",
+        data=data,
+        files=files,
+        timeout=300
+    )
+    resp.raise_for_status()
+    print("[NETWORK] Results sent to server:", resp.json())
 
 if __name__ == "__main__":
     run_client()

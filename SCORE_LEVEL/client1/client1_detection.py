@@ -13,11 +13,16 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import precision_score, recall_score, f1_score
 from joblib import Parallel, delayed
 
+# server imports
+import requests
+from pathlib import Path
+
+
 warnings.filterwarnings("ignore", category=UserWarning)
 
 # settings
 DATA_PATH   = "SCORE_LEVEL/client1/BTC15Min.csv"
-RESULTS_DIR = "SCORE_LEVEL/global/results"
+# RESULTS_DIR = "SCORE_LEVEL/global/results"
 ANOMALY_RATE = 0.05
 CHUNKS       = 6  # also used as ensemble size (one model per chunk)
 
@@ -311,8 +316,29 @@ def run_client(random_state=None):
         "exec_time_total": exec_time_total
     }
 
-    save_results(os.path.join(RESULTS_DIR, "client1_results.json"), results)
-    print(f"[INFO] Results saved in {RESULTS_DIR}")
+    # ---- AUTO SEND TO SERVER ----
+    SERVER_URL = "http://192.168.254.158"   # <-- CHANGE to server PC IP
+    ROUND_ID   = "1"
+    CLIENT_ID  = "client1"
+
+    payload = json.dumps(results).encode("utf-8")
+
+    files = {
+        "payload": ("client1_results.json", payload, "application/json")
+    }
+    data = {
+        "round_id": ROUND_ID,
+        "client_id": CLIENT_ID
+    }
+
+    resp = requests.post(
+        f"{SERVER_URL}/upload_scores",
+        data=data,
+        files=files,
+        timeout=300
+    )
+    resp.raise_for_status()
+    print("[NETWORK] Results sent to server:", resp.json())
 
 if __name__ == "__main__":
     run_client()
