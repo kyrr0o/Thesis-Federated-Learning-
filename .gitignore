@@ -1,0 +1,8 @@
+# Ignore ALL CSV files
+*.csv
+
+# Ignore dataset folders (extra safety)
+Centralized Isolation Forest/dataset/
+SCORE_LEVEL/partitions/
+dataset/
+new_dataset/

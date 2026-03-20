@@ -1,0 +1,63 @@
+PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/Activate.ps1
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/SCORE_LEVEL/client1/client1_detection.py
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 1.3834 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.3196 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1741 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 49999, Val anomalies: 16667, Test anomalies: 16667
+[TIME] Split data: 1.1766 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Preprocess: 0.0881 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[TIME] Dual-level training (chunks x trees): 4.7984 sec
+[TIME] Threshold calibration (global val): 12.9522 sec
+[TIME] Evaluation (test): 9.7883 sec
+[RESULTS] Precision=0.9480, Recall=0.9604, F1=0.9542, Threshold=-0.45056
+[TIME] Total runtime: 30.7494 sec
+[INFO] Results saved in SCORE_LEVEL/global/results
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/SCORE_LEVEL/client2/client2_detection.py
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 1.0530 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.3104 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1312 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 49999, Val anomalies: 16667, Test anomalies: 16667
+[TIME] Split data: 1.4916 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Preprocess: 0.1059 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[TIME] Dual-level training (chunks x trees): 5.0232 sec
+[TIME] Threshold calibration (global val): 12.9233 sec
+[TIME] Evaluation (test): 9.4991 sec
+[RESULTS] Precision=0.9680, Recall=0.9590, F1=0.9634, Threshold=-0.44820
+[TIME] Total runtime: 30.5822 sec
+[INFO] Results saved in SCORE_LEVEL/global/results
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/SCORE_LEVEL/client3/client3_detection.py
+[INFO] Dataset loaded with shape (1666668, 6)
+[TIME] Load data: 0.9128 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1701 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1203 sec
+[INFO] Data split train=1000000, val=333334, test=333334
+[INFO] Train anomalies: 49999, Val anomalies: 16667, Test anomalies: 16667
+[TIME] Split data: 1.1203 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Preprocess: 0.0916 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[TIME] Dual-level training (chunks x trees): 4.7720 sec
+[TIME] Threshold calibration (global val): 12.8393 sec
+[TIME] Evaluation (test): 9.5466 sec
+[RESULTS] Precision=0.9745, Recall=0.9673, F1=0.9709, Threshold=-0.44900
+[TIME] Total runtime: 29.6245 sec
+[INFO] Results saved in SCORE_LEVEL/global/results
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> "dataset_division/FL_Datasets/client1.csv"
+
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/SCORE_LEVEL/global/global_aggregator.py
+[GLOBAL RESULTS] Precision=0.9629, Recall=0.9628, F1=0.9628, Threshold=-1.95234
+[INFO] Global results saved in SCORE_LEVEL/global/results/global

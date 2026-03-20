@@ -1,0 +1,43 @@
+{
+    "round_id": 2,
+    "n_clients": 3,
+    "total_client_trees": 3192,
+    "global_trees": 1500,
+    "max_global_trees": 1500,
+    "merge_time_seconds": 0.33187031745910645,
+    "total_time_seconds": 2.8665194511413574,
+    "total_comm_kb": 123778.3330078125,
+    "global_threshold_median": -0.5013824253839947,
+    "per_client": [
+        {
+            "client_id": "client1",
+            "n_trees": 396,
+            "comm_kb": 11175.3349609375,
+            "f1_local": 0.8132530120481928,
+            "precision_local": 0.7964601769911505,
+            "recall_local": 0.8307692307692308,
+            "threshold_local": -0.5786724795211426,
+            "exec_time_total": 5.805239200592041
+        },
+        {
+            "client_id": "client2",
+            "n_trees": 1398,
+            "comm_kb": 56119.9130859375,
+            "f1_local": 0.791095890410959,
+            "precision_local": 0.6715116279069767,
+            "recall_local": 0.9625,
+            "threshold_local": -0.5013824253839947,
+            "exec_time_total": 6.386044502258301
+        },
+        {
+            "client_id": "client3",
+            "n_trees": 1398,
+            "comm_kb": 56483.0849609375,
+            "f1_local": 0.7997967479674797,
+            "precision_local": 0.6761168384879725,
+            "recall_local": 0.9788557213930348,
+            "threshold_local": -0.48287071357477795,
+            "exec_time_total": 6.6749842166900635
+        }
+    ]
+}

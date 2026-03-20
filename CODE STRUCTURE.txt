@@ -1,0 +1,40 @@
+
+code structure:
+
+THESIS_CODE/
+│
+├── score_level/
+│   ├── client1/
+│   │   ├── client1_detection.py
+│   │   └── client1.csv
+│   ├── client2/
+│   │   ├── client2_detection.py
+│   │   └── client2.csv
+│   ├── client3/
+│   │   ├── client3_detection.py
+│   │   └── client3.csv
+│   └── global/
+│       ├── global_aggregator.py
+│       └── results/
+│           ├── client1_results.json
+│           ├── client2_results.json
+│           ├── client3_results.json
+│           └── global_results.json
+│
+└── tree_level/    <-- new level
+    ├── client1/
+    │   ├── client1_detection.py
+    │   └── client1.csv
+    ├── client2/
+    │   ├── client2_detection.py
+    │   └── client2.csv
+    ├── client3/
+    │   ├── client3_detection.py
+    │   └── client3.csv
+    └── global/
+        ├── tree_aggregator.py
+        └── results/
+            ├── client1_results.json
+            ├── client2_results.json
+            ├── client3_results.json
+            └── global_results.json

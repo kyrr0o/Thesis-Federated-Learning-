@@ -1,0 +1,71 @@
+Client Detection Flow (Pure Dual-Level Parallel)
+
+1. Load dataset (client-specific CSV)
+2. Inject synthetic anomalies (inject_extreme_anomalies)
+3. Feature extraction (extract_features)
+4. Split data → train / val / test (stratified on anomalies)
+5. Preprocess → scale features (StandardScaler)
+6. Random search → tune IsolationForest hyperparameters on training subset
+7. Dual-level parallel training
+8. Chunked training (train_iforest_in_chunks) → memory-safe sub-models
+9. Inter-model ensemble (ensemble_iforest_parallel) → majority vote + aggregate continuous scores
+10. Calibrate threshold → using validation set and aggregated scores
+11. Detection → generate scores and preds on test set
+12. Evaluate metrics → precision, recall, F1
+13. Save locally → results/scores.json + results/labels.json (ready for global aggregation)
+
+
+GLOBAL SERVER SIDE:
+Features:
+
+1. Loads all client_results.json from multiple clients.
+2. Aggregates continuous anomaly scores (mean/median).
+3. Calibrates threshold globally.
+4. Computes global precision, recall, F1.
+5. Saves results in results/global/global_results.json.
+
+**For better metric scores:
+- I-normalize ang client scores sa z-score (per client).
+- Aggregate the normalized scores (mean or median).
+- Calibrate threshold sa normalized scores
+
+
+** IF FIXED PARAMS**
+# FIXED PARAMS FOR ALL CLIENTS (Federated Learning)
+best_params = {
+    "n_estimators": 100,
+    "max_samples": 0.1,
+    "max_features": 0.5,
+    "contamination": 0.02,
+    "bootstrap": False
+}
+print("[INFO] Using fixed parameters:", best_params)
+
+IF need random search for hyperparams insert this before [train_iforest_in_chunks]
+
+def random_search_if(X_train, X_val, y_val, n_iter=20, random_state=None):
+    if random_state is None:
+        random_state = np.random.randint(0, 10000)
+    param_dist = {
+        'n_estimators': [50, 100, 150],
+        'max_samples': [0.05, 0.1, 0.2],
+        'max_features': [0.5, 0.7, 0.9, 1.0],
+        'contamination': [0.01, 0.02, 0.03, 0.04, 0.05],
+        'bootstrap': [True, False]
+    }
+    X_train_sub = X_train.astype(np.float32)
+    y_val = np.array(y_val).astype(int)
+    sampler = list(ParameterSampler(param_dist, n_iter=n_iter, random_state=random_state))
+    best_f1, best_params = -1, None
+    for i, params in enumerate(sampler):
+        model = IsolationForest(**params, n_jobs=1, random_state=np.random.randint(0, 10000))
+        model.fit(X_train_sub)
+        preds = np.where(model.predict(X_val) == -1, 1, 0)
+        f1 = f1_score(y_val, preds, zero_division=0)
+        if f1 > best_f1:
+            best_f1, best_params = f1, params
+    print(f"[INFO] Best F1={best_f1:.4f} | Params={best_params}")
+    return best_params
+
+        best_params = random_search_if(X_train, X_val, y_val, n_iter=RANDOM_SEARCH_ITERS, random_state=random_state)
+

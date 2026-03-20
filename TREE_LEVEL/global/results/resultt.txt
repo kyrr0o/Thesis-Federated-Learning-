@@ -1,0 +1,197 @@
+PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/Activate.ps1
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client1/client1_train.py
+[INFO] Starting client client1 for round 1 with data_seed=12345, model_seed=12345
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 0.9556 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1625 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1470 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 50000, Val anomalies: 16666, Test anomalies: 16667
+[TIME] Split data: 1.3490 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.1006 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7494 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 18.6831 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 9.9403 sec
+[TIME] Evaluation: 6.6981 sec
+[RESULTS] Client=client1, Precision=0.9552, Recall=0.9758, F1=0.9654, Threshold=-0.44913
+[TIME] Total runtime: 40.8635 sec
+[INFO] Serialized client forest saved to TREE_LEVEL\client1\round_1\client1_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client1\round_1\client1_meta.json
+[INFO] Test data cached at TREE_LEVEL\client1\round_1\client1_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client2/client2_train.py
+[INFO] Starting client client2 for round 1 with data_seed=12345, model_seed=12345
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 1.2565 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1829 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1481 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 50000, Val anomalies: 16666, Test anomalies: 16667
+[TIME] Split data: 1.2893 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.0964 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7280 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 18.1077 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 10.0385 sec
+[TIME] Evaluation: 6.6894 sec
+[RESULTS] Client=client2, Precision=0.9543, Recall=0.9662, F1=0.9602, Threshold=-0.45164
+[TIME] Total runtime: 40.6194 sec
+[INFO] Serialized client forest saved to TREE_LEVEL\client2\round_1\client2_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client2\round_1\client2_meta.json
+[INFO] Test data cached at TREE_LEVEL\client2\round_1\client2_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client3/client3_train.py
+[INFO] Starting client client3 for round 1 with data_seed=12345, model_seed=12345
+[INFO] Dataset loaded with shape (1666668, 6)
+[TIME] Load data: 0.8986 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1828 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1361 sec
+[INFO] Data split train=1000000, val=333334, test=333334
+[INFO] Train anomalies: 49999, Val anomalies: 16667, Test anomalies: 16667
+[TIME] Split data: 1.4025 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.0999 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7438 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 18.7405 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 10.0828 sec
+[TIME] Evaluation: 6.7769 sec
+[RESULTS] Client=client3, Precision=0.9624, Recall=0.9680, F1=0.9652, Threshold=-0.45156
+[TIME] Total runtime: 41.1355 sec
+[INFO] Serialized client forest saved to TREE_LEVEL\client3\round_1\client3_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client3\round_1\client3_meta.json
+[INFO] Test data cached at TREE_LEVEL\client3\round_1\client3_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/global/tree_aggregator.py
+[INFO] Starting tree-level aggregation for round 1 (seed=9637)
+[INFO] Loaded 396 trees from client1 (file ~100746.83 KB).
+[INFO] Loaded 396 trees from client2 (file ~103113.90 KB).
+[INFO] Loaded 396 trees from client3 (file ~101970.41 KB).
+[INFO] Collected total of 1188 trees from 3 clients.
+[INFO] Global forest for round 1 has 1188 trees (from 1188 total).
+[TIME] Tree merge time: 0.5073 sec
+[TIME] Total aggregation time: 2.7172 sec
+[INFO] Global forest saved to TREE_LEVEL\global\rounds\round_1\global_forest.pkl
+[INFO] Computed GLOBAL threshold (median of client thresholds): -0.451559
+[INFO] Aggregation stats (incl. global threshold) saved to TREE_LEVEL\global\results\round_1_aggregation.json
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client1/client1_train.py
+[INFO] Starting client client1 for round 2 with data_seed=12345, model_seed=13345
+[INFO] Loaded GLOBAL threshold from round 1: -0.451559
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 1.2563 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1870 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1230 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 50000, Val anomalies: 16666, Test anomalies: 16667
+[TIME] Split data: 2.3556 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.0929 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7168 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 18.3277 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 10.0026 sec
+[TIME] Evaluation: 6.7714 sec
+[RESULTS] Client=client1, Precision=0.9603, Recall=0.9490, F1=0.9546, Threshold=-0.45829
+[TIME] Total runtime: 41.9082 sec
+[TIME] Global-threshold evaluation: 0.0481 sec
+[RESULTS-GLOBAL] Client=client1, Precision=0.9450, Recall=0.9636, F1=0.9542, GlobalThreshold=-0.45156
+[INFO] Serialized client forest saved to TREE_LEVEL\client1\round_2\client1_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client1\round_2\client1_meta.json
+[INFO] Test data cached at TREE_LEVEL\client1\round_2\client1_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client2/client2_train.py
+[INFO] Starting client client2 for round 2 with data_seed=12345, model_seed=13345
+[INFO] Loaded GLOBAL threshold from round 1: -0.451559
+[INFO] Dataset loaded with shape (1666666, 6)
+[TIME] Load data: 1.2279 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1596 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1248 sec
+[INFO] Data split train=999999, val=333333, test=333334
+[INFO] Train anomalies: 50000, Val anomalies: 16666, Test anomalies: 16667
+[TIME] Split data: 2.1974 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.0904 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7081 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 18.6791 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 9.9281 sec
+[TIME] Evaluation: 6.7253 sec
+[RESULTS] Client=client2, Precision=0.9714, Recall=0.9521, F1=0.9616, Threshold=-0.45763
+[TIME] Total runtime: 41.8939 sec
+[TIME] Global-threshold evaluation: 0.0420 sec
+[RESULTS-GLOBAL] Client=client2, Precision=0.9526, Recall=0.9629, F1=0.9577, GlobalThreshold=-0.45156
+[INFO] Serialized client forest saved to TREE_LEVEL\client2\round_2\client2_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client2\round_2\client2_meta.json
+[INFO] Test data cached at TREE_LEVEL\client2\round_2\client2_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/client3/client3_train.py
+[INFO] Starting client client3 for round 2 with data_seed=12345, model_seed=13345
+[INFO] Loaded GLOBAL threshold from round 1: -0.451559
+[INFO] Dataset loaded with shape (1666668, 6)
+[TIME] Load data: 1.2293 sec
+[INFO] Injected 83333 anomalies in numeric cols: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[TIME] Inject anomalies: 0.1814 sec
+[INFO] Using 7 numeric columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume', 'is_anomaly']
+[TIME] Extract features: 0.1366 sec
+[INFO] Data split train=1000000, val=333334, test=333334
+[INFO] Train anomalies: 49999, Val anomalies: 16667, Test anomalies: 16667
+[TIME] Split data: 1.3410 sec
+[INFO] Preprocess using 6 feature columns: ['Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume']
+[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.
+[TIME] Preprocess: 0.0985 sec
+[INFO] Using fixed parameters: {'n_estimators': 100, 'max_samples': 0.1, 'max_features': 0.5, 'contamination': 0.02}
+[INFO] Intra-model Parallel: 6 chunks, outer_jobs=6
+[TIME] Intra-model parallel (chunks): 2.7586 sec
+[INFO] Inter-model Parallel: 3 models, outer_jobs=3
+[TIME] Inter-model parallel (ensemble): 17.7383 sec
+[INFO] Total local models (chunks + ensemble): 9
+[TIME] Threshold calibration: 10.0874 sec
+[TIME] Evaluation: 6.7690 sec
+[RESULTS] Client=client3, Precision=0.9541, Recall=0.9512, F1=0.9526, Threshold=-0.45019
+[TIME] Total runtime: 40.3971 sec
+[TIME] Global-threshold evaluation: 0.0405 sec
+[RESULTS-GLOBAL] Client=client3, Precision=0.9566, Recall=0.9480, F1=0.9523, GlobalThreshold=-0.45156
+[INFO] Serialized client forest saved to TREE_LEVEL\client3\round_2\client3_forest.pkl
+[INFO] Metadata saved to TREE_LEVEL\client3\round_2\client3_meta.json
+[INFO] Test data cached at TREE_LEVEL\client3\round_2\client3_test_data.npz
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> & C:/Users/January/.virtualenvs/SSIS-V3-main-1eLsfWMZ/Scripts/python.exe c:/Users/January/Documents/thesis_code/TREE_LEVEL/global/tree_aggregator.py
+[INFO] Starting tree-level aggregation for round 2 (seed=8941)
+[INFO] Loaded 396 trees from client1 (file ~101322.96 KB).
+[INFO] Loaded 396 trees from client2 (file ~104432.69 KB).
+[INFO] Loaded 396 trees from client3 (file ~103202.93 KB).
+[INFO] Collected total of 1188 trees from 3 clients.
+[INFO] Global forest for round 2 has 1188 trees (from 1188 total).
+[TIME] Tree merge time: 0.4693 sec
+[TIME] Total aggregation time: 2.7354 sec
+[INFO] Global forest saved to TREE_LEVEL\global\rounds\round_2\global_forest.pkl
+[INFO] Computed GLOBAL threshold (median of client thresholds): -0.457630
+[INFO] Aggregation stats (incl. global threshold) saved to TREE_LEVEL\global\results\round_2_aggregation.json
+(SSIS-V3-main) PS C:\Users\January\Documents\thesis_code> 
