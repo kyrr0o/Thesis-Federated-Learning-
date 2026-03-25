@@ -246,18 +246,14 @@ def run_client(random_state=None):
 
     start_total = time.time()
 
-    # -----------------------------
     # NETWORK CONFIG
-    # -----------------------------
-    SERVER_URL = "http://192.168.254.158:5000"   # server PC IP
+    SERVER_URL = "http://192.168.254.110:5000" # PC server, change if necessary
     CLIENT_ID  = "client1"
     ROUND_ID   = "1"
 
     DATA_PATH = "partition.csv"
 
-    # -----------------------------
     # REQUEST PARTITION FROM SERVER
-    # -----------------------------
     print("[NETWORK] Requesting partition from server...")
 
     resp = requests.post(
@@ -273,38 +269,28 @@ def run_client(random_state=None):
 
     print("[NETWORK] Partition received")
 
-    # -----------------------------
     # DATA LOADING
-    # -----------------------------
     t0 = time.time()
     df = load_data(DATA_PATH)
     print(f"[TIME] Load data: {time.time() - t0:.4f} sec")
 
-    # -----------------------------
     # ANOMALY INJECTION
-    # -----------------------------
     t0 = time.time()
     df = inject_extreme_anomalies(df, rate=ANOMALY_RATE, random_state=random_state)
     print(f"[TIME] Inject anomalies: {time.time() - t0:.4f} sec")
 
-    # -----------------------------
     # FEATURE SELECTION
-    # -----------------------------
     t0 = time.time()
     df = extract_features(df)
     print(f"[TIME] Extract features: {time.time() - t0:.4f} sec")
 
-    # -----------------------------
     # DATA SPLIT
-    # -----------------------------
     t0 = time.time()
     train_df, val_df, test_df = split_data(df, random_state=random_state)
     print(f"[TIME] Split data: {time.time() - t0:.4f} sec")
     del df; gc.collect()
 
-    # -----------------------------
     # PREPROCESS
-    # -----------------------------
     t0 = time.time()
     X_train, X_val, X_test, y_train, y_val, y_test, scaler = preprocess(
         train_df, val_df, test_df
@@ -312,9 +298,7 @@ def run_client(random_state=None):
     print(f"[TIME] Preprocess: {time.time() - t0:.4f} sec")
     del train_df, val_df, test_df; gc.collect()
 
-    # -----------------------------
     # FIXED MODEL PARAMETERS
-    # -----------------------------
     best_params = {
         "n_estimators": 100,
         "max_samples": 0.1,
@@ -324,9 +308,7 @@ def run_client(random_state=None):
 
     print("[INFO] Using fixed parameters:", best_params)
 
-    # -----------------------------
     # DUAL-PARALLEL TRAINING
-    # -----------------------------
     t0 = time.time()
     models = train_iforest_in_chunks(
         X_train,
@@ -336,17 +318,13 @@ def run_client(random_state=None):
     )
     print(f"[TIME] Dual-level training (chunks x trees): {time.time() - t0:.4f} sec")
 
-    # -----------------------------
     # VALIDATION
-    # -----------------------------
     t0 = time.time()
     scores_val = aggregate_models_scores(models, X_val)
     threshold  = calibrate_threshold_from_scores(scores_val, y_val)
     print(f"[TIME] Threshold calibration (global val): {time.time() - t0:.4f} sec")
 
-    # -----------------------------
     # TEST EVALUATION
-    # -----------------------------
     t0 = time.time()
     scores_test = aggregate_models_scores(models, X_test)
     p, r, f1, preds = evaluate_model_from_scores(scores_test, y_test, threshold)
@@ -354,16 +332,12 @@ def run_client(random_state=None):
     print(f"[TIME] Evaluation (test): {time.time() - t0:.4f} sec")
     print(f"[RESULTS] Precision={p:.4f}, Recall={r:.4f}, F1={f1:.4f}, Threshold={threshold:.5f}")
 
-    # -----------------------------
     # TOTAL EXECUTION TIME
-    # -----------------------------
     end_total       = time.time()
     exec_time_total = end_total - start_total
     print(f"[TIME] Total runtime: {exec_time_total:.4f} sec")
 
-    # -----------------------------
     # PREPARE RESULTS
-    # -----------------------------
     results = {
         "precision": float(p),
         "recall": float(r),
@@ -377,9 +351,7 @@ def run_client(random_state=None):
         "exec_time_total": exec_time_total
     }
 
-    # -----------------------------
     # SEND RESULTS TO SERVER
-    # -----------------------------
     payload = json.dumps(results).encode("utf-8")
 
     files = {
