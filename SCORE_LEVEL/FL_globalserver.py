@@ -1,3 +1,5 @@
+#FL_globalserver.py
+
 from flask import Flask, request, jsonify, send_file
 import os
 import pandas as pd
@@ -20,8 +22,8 @@ DATA_PATH = os.path.join(
 # normalize path
 DATASET_PATH = os.path.abspath(DATA_PATH)
 
-PARTITION_DIR = "SCORE_LEVEL/partitions"
-RESULTS_DIR = "SCORE_LEVEL/global/results"
+PARTITION_DIR = os.path.join(BASE_DIR, "partitions")
+RESULTS_DIR = os.path.join(BASE_DIR, "global", "results")
 
 EXPECTED_CLIENTS = 1   # change later to 3
 
@@ -42,7 +44,7 @@ def partition_dataset():
         part.to_csv(path, index=False)
 
     print("[SERVER] Dataset partitioned")
-
+    
 
 @app.route("/get_partition", methods=["POST"])
 def get_partition():
@@ -51,7 +53,7 @@ def get_partition():
         return jsonify({"error": "client_id missing or invalid JSON"}), 400
 
     client_id = data["client_id"]
-    path = f"{PARTITION_DIR}/{client_id}.csv"
+    path = os.path.join(PARTITION_DIR, f"{client_id}.csv")
 
     if not os.path.exists(path):
         return jsonify({"error": "partition not found"}), 404
