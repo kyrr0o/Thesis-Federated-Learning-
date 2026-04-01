@@ -246,6 +246,11 @@ def run_client(random_state=None):
 
     start_total = time.time()
 
+    # CPU and Memory Tracking
+    process = psutil.Process()
+    start_cpu = psutil.cpu_percent(interval=None)
+    start_mem = process.memory_info().rss / (1024 * 1024)  # MB
+
     # NETWORK CONFIG
     SERVER_URL = "http://192.168.254.110:5000" # PC server, change if necessary
     CLIENT_ID  = "client1"
@@ -332,6 +337,13 @@ def run_client(random_state=None):
     print(f"[TIME] Evaluation (test): {time.time() - t0:.4f} sec")
     print(f"[RESULTS] Precision={p:.4f}, Recall={r:.4f}, F1={f1:.4f}, Threshold={threshold:.5f}")
 
+    # CPU and Memory Result
+    end_cpu = psutil.cpu_percent(interval=None)
+    end_mem = process.memory_info().rss / (1024 * 1024)  # in MB
+
+    print(f"[SYSTEM] CPU Usage: {end_cpu}%")
+    print(f"[SYSTEM] Memory Usage: {end_mem:.2f} MB")
+
     # TOTAL EXECUTION TIME
     end_total       = time.time()
     exec_time_total = end_total - start_total
@@ -351,8 +363,19 @@ def run_client(random_state=None):
         "exec_time_total": exec_time_total
     }
 
+    # ADD CPU & MEMORY METRICS
+    results.update({
+        "cpu_usage": end_cpu,
+        "mem_usage_mb": end_mem
+})
+
     # SEND RESULTS TO SERVER
     payload = json.dumps(results).encode("utf-8")
+
+    # NETWORK PAYLOAD SIZE
+    file_size_kb = len(payload) / 1024
+    results["payload_size_kb"] = file_size_kb
+    print(f"[NETWORK] Payload size: {file_size_kb:.2f} KB")
 
     files = {
         "payload": ("client1_results.json", payload, "application/json")

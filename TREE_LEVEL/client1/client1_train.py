@@ -202,6 +202,9 @@ def preprocess(train, val, test, use_global_scaler=True):
         mean_ = data["mean"]
         scale_ = data["scale"]
 
+        assert mean_ is not None
+        assert scale_ is not None
+
         if mean_.shape[0] != len(feature_cols):
             print("[WARN] GLOBAL scaler dimension mismatch; refitting locally instead.")
             scaler = StandardScaler()
@@ -227,6 +230,10 @@ def preprocess(train, val, test, use_global_scaler=True):
         X_test  = scaler.transform(test[feature_cols]).astype(np.float32)
 
         if use_global_scaler and not os.path.exists(GLOBAL_SCALER_PATH):
+
+            assert scaler.mean_ is not None
+            assert scaler.scale_ is not None
+
             np.savez(GLOBAL_SCALER_PATH, mean=scaler.mean_, scale=scaler.scale_)
             print(f"[INFO] Saved GLOBAL scaler parameters to {GLOBAL_SCALER_PATH}")
         elif not use_global_scaler:
@@ -312,9 +319,9 @@ def ensemble_iforest_parallel(X_train, X_test, params, n_models=3, random_state=
         return model, scores, preds
 
     seeds = rng.integers(0, 2**31 - 1, size=n_models)
-    results = Parallel(n_jobs=outer_jobs)(
+    results = list(Parallel(n_jobs=outer_jobs)(
         delayed(train_one)(s) for s in seeds
-    )
+    ))
     models, score_list, preds_list = zip(*results)
     score_matrix = np.vstack(score_list)
     preds_matrix = np.vstack(preds_list)
@@ -471,6 +478,7 @@ def run_client(round_id=1, random_state=None):
     models_parallel = train_iforest_in_chunks(
         X_train, BEST_PARAMS, n_chunks=CHUNKS, random_state=seed_model
     )
+    models_parallel = list(models_parallel)
     print(f"[TIME] Intra-model parallel (chunks): {time.time() - t0:.4f} sec")
 
     # --- INTER-MODEL PARALLEL (ENSEMBLE) ---
@@ -478,6 +486,7 @@ def run_client(round_id=1, random_state=None):
     ensemble_models, _, _ = ensemble_iforest_parallel(
         X_train, X_test, BEST_PARAMS, n_models=N_MODELS, random_state=seed_model + 999
     )
+    ensemble_models = list(ensemble_models)
     print(f"[TIME] Inter-model parallel (ensemble): {time.time() - t0:.4f} sec")
 
     # --- MERGE BOTH LEVELS FOR SCORING ---
@@ -487,8 +496,12 @@ def run_client(round_id=1, random_state=None):
     # --- THRESHOLD CALIBRATION (LOCAL) ---
     t0 = time.time()
     val_scores_list = []
+    
     for m in all_models:
+        if m is None:
+            continue
         s_val = m.score_samples(X_val.astype(np.float32))
+
         val_scores_list.append(s_val)
     val_scores = np.mean(np.vstack(val_scores_list), axis=0)
     threshold = calibrate_threshold_from_scores(val_scores, y_val)
@@ -497,8 +510,12 @@ def run_client(round_id=1, random_state=None):
     # --- LOCAL EVALUATION (ALL MODELS) ---
     t0 = time.time()
     test_scores_list = []
+
     for m in all_models:
+        if m is None:
+            continue
         s_test = m.score_samples(X_test.astype(np.float32))
+
         test_scores_list.append(s_test)
     test_scores_agg = np.mean(np.vstack(test_scores_list), axis=0)
 
@@ -561,6 +578,8 @@ def run_client(round_id=1, random_state=None):
     n_trees_chunks = sum(len(m.estimators_) for m in sanitized_chunk_models if hasattr(m, "estimators_"))
     n_trees_ens    = sum(len(m.estimators_) for m in sanitized_ensemble_models if hasattr(m, "estimators_"))
 
+    safe_threshold = float(threshold) if threshold is not None else 0.0
+
     meta = {
         "client_id": CLIENT_ID,
         "round_id": round_id,
@@ -574,12 +593,12 @@ def run_client(round_id=1, random_state=None):
         "precision": float(p),
         "recall": float(r),
         "f1": float(f1),
-        "threshold_local": float(threshold),
+        "threshold_local": safe_threshold,
         # global-feedback-based metrics (if available; else -1)
         "precision_global": float(p_g),
         "recall_global": float(r_g),
         "f1_global": float(f1_g),
-        "global_threshold_used": float(global_threshold) if global_threshold is not None else None,
+        "global_threshold_used": float(global_threshold) if global_threshold is not None else 0.0,
         # runtime + data sizes
         "exec_time_total": float(exec_time_total),
         "n_train": int(len(y_train)),
