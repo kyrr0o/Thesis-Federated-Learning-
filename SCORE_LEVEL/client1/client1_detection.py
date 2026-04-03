@@ -252,7 +252,7 @@ def run_client(random_state=None):
     start_mem = process.memory_info().rss / (1024 * 1024)  # MB
 
     # NETWORK CONFIG
-    SERVER_URL = "http://192.168.254.110:5000" # PC server, change if necessary
+    SERVER_URL = "https://192.168.254.110:5000" # PC server, change if necessary
     CLIENT_ID  = "client1"
     ROUND_ID   = "1"
 

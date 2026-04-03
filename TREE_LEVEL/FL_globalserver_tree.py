@@ -1,3 +1,5 @@
+# FL_globalserver_tree.py
+
 from flask import Flask, request, jsonify, send_file
 import os
 import pandas as pd
@@ -75,7 +77,6 @@ def upload_forest():
 
     client_dir = os.path.join(
         BASE_DIR,
-        "TREE_LEVEL",
         client_id,
         f"round_{ROUND_ID}"
     )

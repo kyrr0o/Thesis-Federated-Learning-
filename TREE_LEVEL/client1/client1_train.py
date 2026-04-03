@@ -7,6 +7,7 @@ import warnings
 import numpy as np
 import pandas as pd
 import psutil
+import requests
 
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
@@ -615,6 +616,30 @@ def run_client(round_id=1, random_state=None):
     print(f"[INFO] Serialized client forest saved to {forest_path}")
     print(f"[INFO] Metadata saved to {meta_path}")
     print(f"[INFO] Test data cached at {test_data_path}")
+
+# SERVER CONFIG
+    SERVER_URL = "https://192.168.254.110:5000"  # same as score-level
+    print("[NETWORK] Sending forest to server...")
+
+    files = {
+        "forest": ("forest.pkl", open(forest_path, "rb"), "application/octet-stream"),
+        "meta": ("meta.json", open(meta_path, "rb"), "application/json"),
+    }
+
+    data = {
+        "client_id": CLIENT_ID
+    }
+
+    resp = requests.post(
+        f"{SERVER_URL}/upload_forest",
+        files=files,
+        data=data,
+        timeout=300,
+        verify=False  # self-signed SSL
+    )
+
+    resp.raise_for_status()
+    print("[NETWORK] Forest sent successfully:", resp.json())
 
     return {
         "forest_path": forest_path,

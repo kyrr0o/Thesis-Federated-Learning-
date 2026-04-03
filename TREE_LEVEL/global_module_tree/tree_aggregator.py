@@ -11,7 +11,12 @@ from joblib import load, dump
 # SETTINGS
 # ==========================
 BASE_DIR          = "TREE_LEVEL"
-CLIENT_IDS        = ["client1", "client2", "client3"]
+# CLIENT_IDS        = ["client1", "client2", "client3"] ---> static
+# Dynamic:
+CLIENT_IDS = [
+    d for d in os.listdir(BASE_DIR)
+    if d.startswith("client")
+]
 ROUND_ID = 1
 
 GLOBAL_ROUNDS_DIR = os.path.join(BASE_DIR, "global", "rounds")
