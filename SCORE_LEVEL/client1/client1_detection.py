@@ -264,7 +264,8 @@ def run_client(random_state=None):
     resp = requests.post(
         f"{SERVER_URL}/get_partition",
         json={"client_id": CLIENT_ID},
-        timeout=300
+        timeout=300,
+        verify=False
     )
 
     resp.raise_for_status()
@@ -390,7 +391,8 @@ def run_client(random_state=None):
         f"{SERVER_URL}/upload_scores",
         data=data,
         files=files,
-        timeout=300
+        timeout=300,
+        verify=False
     )
 
     resp.raise_for_status()
