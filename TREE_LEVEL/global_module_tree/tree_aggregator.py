@@ -15,7 +15,8 @@ BASE_DIR          = "TREE_LEVEL"
 # Dynamic:
 CLIENT_IDS = [
     d for d in os.listdir(BASE_DIR)
-    if d.startswith("client")
+    if os.path.isdir(os.path.join(BASE_DIR, d))
+    and d.startswith("client")
 ]
 ROUND_ID = 1
 
@@ -59,14 +60,18 @@ def load_client_package(client_id, round_id):
             f"[ERROR] Meta file not found for {client_id}, round {round_id}: {meta_path}"
         )
 
-    pkg  = load(forest_path)
+    t_deserialize_start = time.time()
+
+    pkg = load(forest_path)
+
+    deserialize_time = time.time() - t_deserialize_start
+
     with open(meta_path, "r") as f:
         meta = json.load(f)
 
     comm_cost_kb = os.path.getsize(forest_path) / 1024.0
 
-    return pkg, meta, forest_path, comm_cost_kb
-
+    return pkg, meta, forest_path, comm_cost_kb, deserialize_time
 
 def sample_trees(all_trees, max_trees, random_state=None):
     """
@@ -80,10 +85,93 @@ def sample_trees(all_trees, max_trees, random_state=None):
     idx = rng.choice(n, size=max_trees, replace=False)
     return [all_trees[i] for i in idx]
 
+def compute_tree_diversity(trees):
+    """
+    Measures structural diversity using:
+    - tree depth variance
+    - feature usage entropy proxy
+    """
+
+    depths = []
+    feature_counts = {}
+
+    for t in trees:
+        tree = t.tree_
+
+        depths.append(tree.max_depth if hasattr(tree, "max_depth") else tree.node_count)
+
+        for f in tree.feature:
+            if f >= 0:
+                feature_counts[f] = feature_counts.get(f, 0) + 1
+
+    depth_var = float(np.var(depths)) if len(depths) > 1 else 0.0
+
+    total = sum(feature_counts.values()) + 1e-9
+    entropy = -sum((v/total) * np.log(v/total) for v in feature_counts.values())
+
+    return {
+        "depth_variance": depth_var,
+        "feature_entropy": float(entropy),
+        "num_unique_features": len(feature_counts)
+    }
 
 # ==========================
 # MAIN AGGREGATOR
 # ==========================
+
+def collect_global_client_evaluations(round_id):
+    eval_dir = os.path.join(BASE_DIR, "global", "client_evaluations")
+
+    if not os.path.exists(eval_dir):
+        print("[WARN] No global evaluation directory found.")
+        return None
+
+    evals = []
+
+    for file in os.listdir(eval_dir):
+
+        if not file.endswith(".json"):
+            continue
+
+        if f"round_{round_id}" not in file:
+            continue
+
+        path = os.path.join(eval_dir, file)
+
+        with open(path, "r") as f:
+            data = json.load(f)
+
+        evals.append(data)
+
+    if len(evals) == 0:
+        print("[WARN] No client global evaluations found.")
+        return None
+
+    avg_precision = np.mean([e["precision_global"] for e in evals])
+    avg_recall = np.mean([e["recall_global"] for e in evals])
+    avg_f1 = np.mean([e["f1_global"] for e in evals])
+
+    summary = {
+        "round_id": round_id,
+        "n_clients": len(evals),
+        "avg_precision_global": float(avg_precision),
+        "avg_recall_global": float(avg_recall),
+        "avg_f1_global": float(avg_f1),
+        "client_results": evals
+    }
+
+    summary_path = os.path.join(
+        RESULTS_DIR,
+        f"round_{round_id}_global_eval_summary.json"
+    )
+
+    with open(summary_path, "w") as f:
+        json.dump(summary, f, indent=4)
+
+    print(f"[INFO] Global evaluation summary saved to {summary_path}")
+
+    return summary
+
 def run_tree_aggregation(round_id=1, random_state=None):
     """
     Aggregate client Isolation Forest trees at the tree level to form
@@ -105,17 +193,18 @@ def run_tree_aggregation(round_id=1, random_state=None):
 
     print(f"[INFO] Starting tree-level aggregation for round {round_id} (seed={random_state})")
 
-    t_start = time.time()
+    t_total_start = time.time()
+    t_load_start = time.time()
+
     client_infos = []
     all_trees = []
     template_model = None
-
     total_comm_kb = 0.0
 
     # 1) Load client packages
     for cid in CLIENT_IDS:
         try:
-            pkg, meta, forest_path, comm_kb = load_client_package(cid, round_id)
+            pkg, meta, forest_path, comm_kb, deserialize_time = load_client_package(cid, round_id)
         except FileNotFoundError as e:
             print(f"[WARN] Skipping client {cid} for round {round_id}: {e}")
             continue
@@ -147,12 +236,27 @@ def run_tree_aggregation(round_id=1, random_state=None):
             "meta": meta,
             "n_trees": n_client_trees,
             "comm_kb": comm_kb,
+            "deserialize_time": deserialize_time,
         })
 
         print(
             f"[INFO] Loaded {n_client_trees} trees from {cid} "
             f"(file ~{comm_kb:.2f} KB)."
         )
+
+    t_load_end = time.time()
+
+    # ==========================
+    # GLOBAL METRICS (NOW SAFE)
+    # ==========================
+    avg_f1 = np.mean([ci["meta"]["f1"] for ci in client_infos])
+    avg_precision = np.mean([ci["meta"]["precision"] for ci in client_infos])
+    avg_recall = np.mean([ci["meta"]["recall"] for ci in client_infos])
+
+    # ==========================
+    # TREE DIVERSITY (NOW SAFE)
+    # ==========================
+    diversity_metrics = compute_tree_diversity(all_trees)
 
     if len(client_infos) == 0:
         raise RuntimeError(f"[ERROR] No valid client forests found for round {round_id}.")
@@ -165,12 +269,24 @@ def run_tree_aggregation(round_id=1, random_state=None):
 
     # 2) Sample trees if needed and build global forest
     t_merge_start = time.time()
-    sampled_trees = sample_trees(all_trees, MAX_GLOBAL_TREES, random_state=random_state)
+
+    t_sampling_start = time.time()
+
+    sampled_trees = sample_trees(
+        all_trees,
+        MAX_GLOBAL_TREES,
+        random_state=random_state
+    )
+
+    sampling_time = time.time() - t_sampling_start
+
     n_global_trees = len(sampled_trees)
 
     global_model = copy.deepcopy(template_model)
     global_model.estimators_ = sampled_trees
     global_model.n_estimators = n_global_trees
+
+    t_merge_end = time.time()
 
     # 3) Save global forest
     round_dir = os.path.join(GLOBAL_ROUNDS_DIR, f"round_{round_id}")
@@ -182,7 +298,7 @@ def run_tree_aggregation(round_id=1, random_state=None):
 
     t_merge_end = time.time()
     merge_time = t_merge_end - t_merge_start
-    total_time = t_merge_end - t_start
+    total_time = t_merge_end - t_total_start
 
     print(
         f"[INFO] Global forest for round {round_id} has {n_global_trees} trees "
@@ -216,18 +332,31 @@ def run_tree_aggregation(round_id=1, random_state=None):
         "merge_time_seconds": float(merge_time),
         "total_time_seconds": float(total_time),
         "total_comm_kb": float(total_comm_kb),
+        "tree_retention_ratio": float(n_global_trees / total_trees),
+        "trees_removed": int(total_trees - n_global_trees),
+        "tree_diversity": diversity_metrics,
+        "overhead_breakdown": {
+            "loading_time": float(t_load_end - t_load_start),
+            "sampling_time": float(sampling_time),
+            "merging_time": float(t_merge_end - t_merge_start),
+            "total_time": float(total_time),
+},
         # global threshold from client feedback
         "global_threshold_median": float(global_threshold) if global_threshold is not None else None,
         "per_client": [
             {
                 "client_id": ci["client_id"],
                 "n_trees": int(ci["n_trees"]),
+                    "tree_contribution_ratio":
+                    float(ci["n_trees"] / total_trees),
                 "comm_kb": float(ci["comm_kb"]),
                 "f1_local": float(ci["meta"].get("f1", -1.0)),
                 "precision_local": float(ci["meta"].get("precision", -1.0)),
                 "recall_local": float(ci["meta"].get("recall", -1.0)),
                 "threshold_local": float(ci["meta"].get("threshold_local", -1.0)),
                 "exec_time_total": float(ci["meta"].get("exec_time_total", -1.0)),
+                "deserialize_time_seconds":
+                    float(ci["deserialize_time"]),
             }
             for ci in client_infos
         ],
@@ -239,6 +368,8 @@ def run_tree_aggregation(round_id=1, random_state=None):
         json.dump(results, f, indent=4)
 
     print(f"[INFO] Aggregation stats (incl. global threshold) saved to {results_path}")
+
+    collect_global_client_evaluations(round_id)
 
     return {
         "global_forest_path": global_forest_path,

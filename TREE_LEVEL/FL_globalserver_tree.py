@@ -6,6 +6,7 @@ import pandas as pd
 import numpy as np
 
 from TREE_LEVEL.global_module_tree.tree_aggregator import run_tree_aggregation
+from TREE_LEVEL.client1.client1_train import eval_global_on_client
 
 app = Flask(__name__)
 
@@ -99,7 +100,25 @@ def upload_forest():
 
         run_tree_aggregation(round_id=ROUND_ID)
 
+        print("[SERVER] Running GLOBAL evaluation for all clients...")
+
+        for cid in list(received_clients):
+
+            try:
+                if cid == "client1":
+                    from TREE_LEVEL.client1.client1_train import eval_global_on_client
+                    eval_global_on_client(round_id=ROUND_ID)
+
+                # future:
+                # elif cid == "client2":
+                #     from TREE_LEVEL.client2.client2_train import eval_global_on_client
+
+            except Exception as e:
+                print(f"[ERROR] Global eval failed for {cid}: {e}")
+
         received_clients.clear()
+
+        print("[SERVER] Round complete ✔")
 
     return jsonify({"status": "received"})
 

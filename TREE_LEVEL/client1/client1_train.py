@@ -21,8 +21,6 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # SETTINGS (ADJUST PER CLIENT)
 # ==========================
 CLIENT_ID       = "client1"
-DATA_PATH       = "TREE_LEVEL/client1/BTC15Min.csv"
-
 BASE_DIR        = "TREE_LEVEL"
 ROUNDS_DIR      = os.path.join(BASE_DIR, CLIENT_ID)
 
@@ -81,10 +79,35 @@ def choose_outer_jobs(preferred=-1, cpu_safety_frac=0.5, mem_threshold_pct=80):
     return max(1, n_jobs)
 
 
-def load_data(file_path):
-    df = pd.read_csv(file_path)
-    df = df.loc[:, ~df.columns.str.contains('^Unnamed')]
+def fetch_partition_from_server():
+
+    SERVER_URL = "https://192.168.254.110:5000"
+
+    print(f"[NETWORK] Requesting partition for {CLIENT_ID}...")
+
+    resp = requests.post(
+        f"{SERVER_URL}/get_partition",
+        json={"client_id": CLIENT_ID},
+        verify=False,
+        timeout=300
+    )
+
+    resp.raise_for_status()
+
+    local_dir = os.path.join(BASE_DIR, CLIENT_ID)
+    os.makedirs(local_dir, exist_ok=True)
+
+    local_csv = os.path.join(local_dir, "partition.csv")
+
+    with open(local_csv, "wb") as f:
+        f.write(resp.content)
+
+    print(f"[INFO] Partition downloaded to {local_csv}")
+
+    df = pd.read_csv(local_csv)
+
     print(f"[INFO] Dataset loaded with shape {df.shape}")
+
     return df
 
 
@@ -440,10 +463,10 @@ def run_client(round_id=1, random_state=None):
     # --- LOAD SERVER FEEDBACK (GLOBAL THRESHOLD FROM PREVIOUS ROUND) ---
     global_threshold = load_global_feedback(round_id)
 
-    # --- DATA LOADING ---
+    # --- FETCH PARTITION FROM SERVER ---
     t0 = time.time()
-    df = load_data(DATA_PATH)
-    print(f"[TIME] Load data: {time.time() - t0:.4f} sec")
+    df = fetch_partition_from_server()
+    print(f"[TIME] Fetch partition: {time.time() - t0:.4f} sec")
 
     # --- ANOMALY INJECTION (CONSISTENT PER CLIENT) ---
     t0 = time.time()
@@ -608,6 +631,7 @@ def run_client(round_id=1, random_state=None):
         # to allow consistent re-use if needed
         "random_state_data": int(seed_data),
         "random_state_model": int(seed_model),
+        "forest_file_size_kb": float(os.path.getsize(forest_path) / 1024.0),
     }
 
     with open(meta_path, "w") as f:
@@ -721,6 +745,32 @@ def eval_global_on_client(round_id=1, random_state=None):
         f"Precision={p:.4f}, Recall={r:.4f}, F1={f1:.4f}, "
         f"GlobalThreshold={global_threshold:.6f}"
     )
+
+    # ==========================
+    # SAVE GLOBAL EVALUATION
+    # ==========================
+    eval_dir = os.path.join(BASE_DIR, "global", "client_evaluations")
+    os.makedirs(eval_dir, exist_ok=True)
+
+    eval_path = os.path.join(
+        eval_dir,
+        f"{CLIENT_ID}_round_{round_id}_global_eval.json"
+    )
+
+    eval_results = {
+        "client_id": CLIENT_ID,
+        "round_id": round_id,
+        "precision_global": float(p),
+        "recall_global": float(r),
+        "f1_global": float(f1),
+        "global_threshold": float(global_threshold),
+        "n_test_samples": int(len(y_test))
+    }
+
+    with open(eval_path, "w") as f:
+        json.dump(eval_results, f, indent=4)
+
+    print(f"[INFO] Global evaluation saved to {eval_path}")
 
     return {
         "client_id": CLIENT_ID,
