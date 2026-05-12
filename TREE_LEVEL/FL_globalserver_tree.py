@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from TREE_LEVEL.global_module_tree.tree_aggregator import run_tree_aggregation
-from TREE_LEVEL.client1.client1_train import eval_global_on_client
+from TREE_LEVEL.global_module_tree.tree_aggregator import collect_global_client_evaluations
 
 app = Flask(__name__)
 
@@ -116,6 +116,8 @@ def upload_forest():
             except Exception as e:
                 print(f"[ERROR] Global eval failed for {cid}: {e}")
 
+        collect_global_client_evaluations(ROUND_ID)
+        
         received_clients.clear()
 
         print("[SERVER] Round complete ✔")

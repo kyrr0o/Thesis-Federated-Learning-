@@ -369,8 +369,6 @@ def run_tree_aggregation(round_id=1, random_state=None):
 
     print(f"[INFO] Aggregation stats (incl. global threshold) saved to {results_path}")
 
-    collect_global_client_evaluations(round_id)
-
     return {
         "global_forest_path": global_forest_path,
         "results_path": results_path,
