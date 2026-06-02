@@ -2,6 +2,7 @@
 
 from flask import Flask, request, jsonify, send_file
 import os
+import sys
 import pandas as pd
 import numpy as np
 
@@ -11,6 +12,8 @@ from TREE_LEVEL.global_module_tree.tree_aggregator import collect_global_client_
 app = Flask(__name__)
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+sys.path.append(BASE_DIR)
+sys.path.append(os.path.join(BASE_DIR, "TREE_LEVEL"))
 
 DATA_PATH = os.path.join(
     BASE_DIR,
@@ -25,7 +28,8 @@ DATASET_PATH = os.path.abspath(DATA_PATH)
 PARTITION_DIR = os.path.join(BASE_DIR, "partitions")
 
 EXPECTED_CLIENTS = 1   # change later to 3
-ROUND_ID = 1
+CURRENT_ROUND = 1
+TOTAL_ROUNDS = 2
 
 received_clients = set()
 
@@ -67,9 +71,10 @@ def get_partition():
 
     return send_file(path, as_attachment=True)
 
-
 @app.route("/upload_forest", methods=["POST"])
 def upload_forest():
+
+    global CURRENT_ROUND
 
     client_id = request.form["client_id"]
 
@@ -79,51 +84,139 @@ def upload_forest():
     client_dir = os.path.join(
         BASE_DIR,
         client_id,
-        f"round_{ROUND_ID}"
+        f"round_{CURRENT_ROUND}"
     )
 
     os.makedirs(client_dir, exist_ok=True)
 
-    forest_path = os.path.join(client_dir, f"{client_id}_forest.pkl")
-    meta_path = os.path.join(client_dir, f"{client_id}_meta.json")
+    forest_path = os.path.join(
+        client_dir,
+        f"{client_id}_forest.pkl"
+    )
+
+    meta_path = os.path.join(
+        client_dir,
+        f"{client_id}_meta.json"
+    )
 
     forest_file.save(forest_path)
     meta_file.save(meta_path)
 
-    print("[SERVER] Received forest from", client_id)
+    print(f"[SERVER] Received forest from {client_id}")
 
     received_clients.add(client_id)
 
+    print(
+        f"[SERVER] Progress: "
+        f"{len(received_clients)}/{EXPECTED_CLIENTS} clients received"
+    )
+
     if len(received_clients) == EXPECTED_CLIENTS:
 
-        print("[SERVER] All clients finished. Running tree aggregation...")
+        print(
+            f"[SERVER] All clients finished for Round {CURRENT_ROUND}"
+        )
 
-        run_tree_aggregation(round_id=ROUND_ID)
+        # ==========================
+        # TREE AGGREGATION
+        # ==========================
+        print("[SERVER] Running tree aggregation...")
 
+        run_tree_aggregation(
+            round_id=CURRENT_ROUND
+        )
+
+        # ==========================
+        # GLOBAL EVALUATION
+        # ==========================
         print("[SERVER] Running GLOBAL evaluation for all clients...")
 
         for cid in list(received_clients):
 
             try:
-                if cid == "client1":
-                    from TREE_LEVEL.client1.client1_train import eval_global_on_client
-                    eval_global_on_client(round_id=ROUND_ID)
 
-                # future:
-                # elif cid == "client2":
-                #     from TREE_LEVEL.client2.client2_train import eval_global_on_client
+                if cid == "client1":
+
+                    from TREE_LEVEL.client1.client1_train import (
+                        eval_global_on_client
+                    )
+
+                    eval_global_on_client(
+                        round_id=CURRENT_ROUND
+                    )
+
+                elif cid == "client2":
+
+                    from TREE_LEVEL.client2.client2_train import (
+                        eval_global_on_client
+                    )
+
+                    eval_global_on_client(
+                        round_id=CURRENT_ROUND
+                    )
+
+                elif cid == "client3":
+
+                    from TREE_LEVEL.client3.client3_train import (
+                        eval_global_on_client
+                    )
+
+                    eval_global_on_client(
+                        round_id=CURRENT_ROUND
+                    )
 
             except Exception as e:
-                print(f"[ERROR] Global eval failed for {cid}: {e}")
 
-        collect_global_client_evaluations(ROUND_ID)
-        
+                print(
+                    f"[ERROR] Global eval failed for "
+                    f"{cid}: {e}"
+                )
+
+        # ==========================
+        # COLLECT GLOBAL RESULTS
+        # ==========================
+        collect_global_client_evaluations(
+            CURRENT_ROUND
+        )
+
+        # IMPORTANT:
+        # reset list of finished clients
+        # before next round starts
         received_clients.clear()
 
-        print("[SERVER] Round complete ✔")
+        # ==========================
+        # NEXT ROUND
+        # ==========================
+        if CURRENT_ROUND < TOTAL_ROUNDS:
 
-    return jsonify({"status": "received"})
+            CURRENT_ROUND += 1
 
+            print(
+                f"[SERVER] Moving to Round {CURRENT_ROUND}"
+            )
+
+        else:
+
+            print(
+                "[SERVER] Federated Training Complete"
+            )
+
+            print(
+                "[SERVER] All rounds completed successfully"
+            )
+
+    return jsonify({
+        "status": "received",
+        "current_round": CURRENT_ROUND
+    })
+
+@app.route("/current_round", methods=["GET"])
+def current_round():
+
+    return jsonify({
+        "round": CURRENT_ROUND,
+        "total_rounds": TOTAL_ROUNDS
+    })
 
 if __name__ == "__main__":
 

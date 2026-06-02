@@ -20,7 +20,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 # ==========================
 # SETTINGS (ADJUST PER CLIENT)
 # ==========================
-CLIENT_ID       = "client1"
+CLIENT_ID       = "client1" # change client_id per device
 BASE_DIR        = "TREE_LEVEL"
 ROUNDS_DIR      = os.path.join(BASE_DIR, CLIENT_ID)
 
@@ -124,7 +124,10 @@ def inject_extreme_anomalies(df, rate=0.02, rng=None):
     if rng is None:
         rng = np.random.default_rng()
 
-    numeric_cols = df.select_dtypes(include=[np.number]).columns.tolist()
+    numeric_cols = [
+        'Timestamp', 'Open', 'High', 'Low', 'Close', 'Volume'
+    ]
+
     numeric_cols = [c for c in numeric_cols if c != 'datetime']
 
     n_anomalies = int(len(df) * rate)
@@ -215,8 +218,12 @@ def preprocess(train, val, test, use_global_scaler=True):
     - Later runs/clients load the same mean/scale -> consistent feature space.
     """
     feature_cols = [
-        c for c in train.columns
-        if c not in ('is_anomaly', 'datetime')
+        'Timestamp',
+        'Open',
+        'High',
+        'Low',
+        'Close',
+        'Volume'
     ]
 
     print(f"[INFO] Preprocess using {len(feature_cols)} feature columns: {feature_cols}")
@@ -673,6 +680,21 @@ def run_client(round_id=1, random_state=None):
         "random_state_model": seed_model,
     }
 
+def get_current_round():
+
+    SERVER_URL = "https://192.168.254.110:5000"
+
+    resp = requests.get(
+        f"{SERVER_URL}/current_round",
+        verify=False
+    )
+
+    resp.raise_for_status()
+
+    data = resp.json()
+
+    return data.get("round", 1)
+
 # ==========================
 # FEEDBACK LOOP: EVAL GLOBAL MODEL ON THIS CLIENT
 # ==========================
@@ -695,22 +717,16 @@ def _load_global_threshold(round_id):
 
 
 def _build_local_test_data(round_id):
-    """
-    Reuse the exact local test set (X_test, y_test) that was cached
-    during run_client(...) for this round. This avoids inconsistencies
-    in splits and scaling when evaluating the global model.
-    """
     test_round_dir = os.path.join(ROUNDS_DIR, f"round_{round_id}")
     test_data_path = os.path.join(test_round_dir, f"{CLIENT_ID}_test_data.npz")
-
-    if not os.path.exists(test_data_path):
-        raise FileNotFoundError(
-            f"[ERROR] Cached test data not found for {CLIENT_ID}, round {round_id}: {test_data_path}"
-        )
 
     data = np.load(test_data_path)
     X_test = data["X_test"]
     y_test = data["y_test"]
+
+    # 🔥 FORCE FLOAT32 (important for sklearn consistency)
+    X_test = X_test.astype(np.float32)
+
     return X_test, y_test
 
 
@@ -736,7 +752,16 @@ def eval_global_on_client(round_id=1, random_state=None):
         global_threshold = 0.0
 
     X_test, y_test = _build_local_test_data(round_id=round_id)
-    scores = global_model.score_samples(X_test.astype(np.float32))
+    
+    X_test = X_test.astype(np.float32)
+
+    if X_test.shape[1] != global_model.n_features_in_:
+        print("[ERROR] Feature mismatch detected!")
+        print("X_test:", X_test.shape[1])
+        print("Model expects:", global_model.n_features_in_)
+        return None
+
+    scores = global_model.score_samples(X_test)
 
     p, r, f1, preds = evaluate_model_from_scores(scores, y_test, global_threshold)
 
@@ -782,8 +807,14 @@ def eval_global_on_client(round_id=1, random_state=None):
     }
 
 
+# Automatic round loop
 if __name__ == "__main__":
-    # Example run; adjust round_id as needed
-    run_client(round_id=1)
-    # After tree_aggregator for round 2, you can call:
-    # eval_global_on_client(round_id=2)
+    last_round = 0
+    while True:
+        round_id = get_current_round()
+        if round_id > 2:
+            break
+        if round_id != last_round:
+            run_client(round_id=round_id)
+            last_round = round_id
+        time.sleep(5)

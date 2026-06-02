@@ -1,0 +1,130 @@
+bai naa koy thesis bai: A Dual-Parallel FederatedIsolation Forest Framework forPrivacy-Preserving BlockchainAnomaly Detection
+
+setup: local devices and hpc
+aggregator: score level and tree level. 
+
+now i want you to check if sakto naba akong code, i have 3 clients and 1 server for local device lang sa later na ang reconfiguration for hpc. its 2 rounds and pls icheck if:
+
+
+insakto ba akong code. 
+
+
+
+i have server, client and aggreg file
+
+im done testing using only 1 device/client pa since prep pa ang uban devcice , i want you to check if sakto na ba ang results? base sa amo paper and ma satisfy ang eval? 
+
+
+3.8 | Implementation of Tree-Level Aggregation
+The second federated configuration in this study will implement a tree-level aggregation
+strategy, wherein each federated client will train multiple Isolation Forest models
+locally and will transmit only sanitized decision tree structures to a central server.
+Unlike score-level aggregation, anomaly scores will remain entirely local to each
+client and will be used solely for threshold calibration and performance evaluation.
+Global aggregation will be performed exclusively at the model-structure level, where
+decision trees learned across distributed clients will be pooled to construct a unified
+global anomaly detector. This design will enable structural knowledge sharing across
+decentralized data partitions while preserving data privacy, as no raw records, feature
+matrices, labels, or anomaly scores will be exchanged during the federated process.
+
+32
+
+Chapter 3. Research Methodology 3.8. Implementation of Tree-Level Aggregation
+
+Figure 3.5: End-to-End Tree-Level Federated Learning Architecture
+
+33
+
+Chapter 3. Research Methodology 3.8. Implementation of Tree-Level Aggregation
+
+The tree-level aggregation strategy will operate across three federated rounds (R
+= 3). In each round, every client will execute the complete local anomaly detection
+pipeline independently on its server-partitioned dataset subset. At the beginning
+of each round, clients will initialize their local execution context by setting round
+identifiers, configuring random seeds for reproducibility, and optionally loading global
+feedback (e.g., the aggregated global anomaly threshold) from the previous round
+when available. Each client will perform local preprocessing on its assigned dataset
+partition. To ensure a consistent feature space across all clients, preprocessing will
+incorporate a shared global StandardScaler. The scaler parameters will be computed
+centrally during dataset initialization prior to data partitioning and will be distributed
+to all clients as fixed preprocessing parameters. These parameters will remain constant
+across federated rounds and will not require access to client-side raw data, thereby
+maintaining feature alignment while preserving data privacy. All local Isolation Forest
+models will be initialized using a uniform hyperparameter configuration derived from
+centralized tuning, including 100 estimators, 0.1 maximum samples, 0.5 maximum
+features, and a contamination rate of 0.02. Proportional adjustments will be applied
+to chunk-based models to ensure memory efficiency without compromising fairness or
+comparability across clients.
+Local training will follow a dual-level parallel execution framework. First,
+intra-model parallelism (chunk-level) will be applied by partitioning the local training
+data into multiple chunks, with each chunk used to train an individual Isolation Forest
+model. Second, inter-model parallelism (ensemble-level) will be employed by training
+multiple full-data Isolation Forest models in parallel on the entire local training set, as
+described in Section 3.4.
+After local training, each client will perform local validation and threshold selection.
+Validation anomaly scores will be computed from all locally trained models and
+aggregated only within the client to form a unified validation score vector. An optimal
+decision threshold will then be selected by maximizing the F1-score on the validation
+set. These anomaly scores and thresholds will not be transmitted to the server and will
+be used exclusively for local calibration and performance assessment. Subsequently,
+local testing will be conducted using the calibrated threshold to compute precision,
+recall, and F1-score metrics. Execution time and dataset statistics will also be recorded
+to support system-level evaluation.
+Prior to transmission, all locally trained models will undergo privacy-oriented
+sanitization performed entirely at the client side. This process will remove impurity
+
+34
+
+Chapter 3. Research Methodology 3.9. Evaluation Metrics and Analysis Framework
+
+statistics, round decision split thresholds, and discard feature importance attributes
+to reduce the risk of data leakage while preserving anomaly scoring behavior. Both
+chunk-level and ensemble-level Isolation Forest models will be sanitized using the same
+procedure. The resulting sanitized model structures, along with lightweight metadata,
+will then be prepared for server-side aggregation.
+During the global aggregation stage, the central server will collect the sanitized
+model packages from all participating clients for the current round. The server will
+extract all decision trees from the received client models and pool them into a single
+unified tree set. The first valid client model package will serve as the template
+Isolation Forest, providing global configuration parameters such as contamination rate
+and sampling constraints. Using the pooled decision trees, the server will construct a
+global federated Isolation Forest. To ensure memory stability, the server will optionally
+subsample pooled trees using a fixed upper bound on the global forest size.
+A global anomaly threshold will then be computed by taking the median of all
+client-level thresholds, yielding a stable and robust consensus cutoff that reflects
+contributions from all clients while mitigating the influence of outliers. The resulting
+global forest and aggregation statistics will be stored for evaluation and optional
+feedback to clients in subsequent rounds. In later rounds, clients may incorporate global
+feedback, such as the aggregated global threshold, while retraining local models on their
+assigned data partitions. This iterative design will enable progressive refinement of
+the global anomaly detection model while maintaining strict data locality and privacy
+guarantees.
+
+3.9.2 | Tree-Level Aggregation Evaluation
+The tree-level aggregation strategy will be evaluated with a focus on global
+model quality, communication overhead associated with transmitting tree structures,
+aggregation cost at the server, and the diversity of the merged forest.
+A. Global Model Quality Across Clients – The global federated forest will be
+evaluated on each client’s test set to assess its robustness across non-IID data
+distributions. Per-client precision, recall, and F1-scores will indicate whether
+structural tree aggregation produces a more stable and generalizable anomaly
+detector.
+B. Communication Cost of Model Transmission – This metric measures the size (in
+KB/MB) of the sanitized tree packages transmitted by each client. As entire Isolation
+Forest structures are exchanged, this evaluation reflects the true communication
+overhead incurred by tree-level federated learning in each round.
+
+36
+
+Chapter 3. Research Methodology 3.9. Evaluation Metrics and Analysis Framework
+
+C. Aggregation Overhead per Round – This criterion quantifies server-side
+computational cost, including tree deserialization, pooling, sampling, and
+reconstruction of the global forest. Aggregation time reflects the computational
+burden required to merge large numbers of trees across multiple clients.
+D. Tree Diversity and Structural Scale – This measure reports the total number of trees
+contributed by all clients and the number retained after enforcing the global tree cap.
+Diversity analysis highlights how chunk-level parallelism, ensemble construction,
+and heterogeneous datasets contribute to enriching the final global forest structure.
+
+isend ra nko ang code wait sa

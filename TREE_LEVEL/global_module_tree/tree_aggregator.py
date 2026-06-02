@@ -13,12 +13,16 @@ from joblib import load, dump
 BASE_DIR          = "TREE_LEVEL"
 # CLIENT_IDS        = ["client1", "client2", "client3"] ---> static
 # Dynamic:
-CLIENT_IDS = [
-    d for d in os.listdir(BASE_DIR)
-    if os.path.isdir(os.path.join(BASE_DIR, d))
-    and d.startswith("client")
-]
-ROUND_ID = 1
+def get_client_ids():
+
+    return [
+        d for d in os.listdir(BASE_DIR)
+        if os.path.isdir(
+            os.path.join(BASE_DIR, d)
+        )
+        and d.startswith("client")
+    ]
+#ROUND_ID = 1
 
 GLOBAL_ROUNDS_DIR = os.path.join(BASE_DIR, "global", "rounds")
 RESULTS_DIR       = os.path.join(BASE_DIR, "global", "results")
@@ -202,7 +206,7 @@ def run_tree_aggregation(round_id=1, random_state=None):
     total_comm_kb = 0.0
 
     # 1) Load client packages
-    for cid in CLIENT_IDS:
+    for cid in get_client_ids():
         try:
             pkg, meta, forest_path, comm_kb, deserialize_time = load_client_package(cid, round_id)
         except FileNotFoundError as e:
@@ -378,4 +382,4 @@ def run_tree_aggregation(round_id=1, random_state=None):
 
 if __name__ == "__main__":
     # Example: run for round 2. You can loop this for R=3, etc.
-    run_tree_aggregation(round_id=ROUND_ID)
+    run_tree_aggregation(round_id=1)
